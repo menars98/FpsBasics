@@ -45,3 +45,4 @@ void AMNRProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 }
 
 
+
