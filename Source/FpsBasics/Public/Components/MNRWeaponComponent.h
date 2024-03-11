@@ -54,6 +54,9 @@ protected:
 	UFUNCTION()
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	UPROPERTY(VisibleAnywhere, Category ="Weapon")
+	FName HandSocketName;
+
 private:
 	/** The Character holding this weapon*/
 	AMNRCharacterBase* Character;

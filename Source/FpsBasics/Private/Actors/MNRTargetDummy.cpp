@@ -5,38 +5,45 @@
 #include "Characters/MNRCharacterBase.h"
 #include "Actors/MNRProjectile.h"
 #include "Player/MNRPlayerState.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 AMNRTargetDummy::AMNRTargetDummy()
 {
 	bIsDown = false;
+
 	OuterRing = CreateDefaultSubobject<UStaticMeshComponent>("OuterRing");
 	OuterRing->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	OuterRing->SetupAttachment(RootComponent);
+	RootComponent = OuterRing;
 	OuterRing->OnComponentHit.AddDynamic(this, &AMNRTargetDummy::OnHit);
 
-	MiddleRing = CreateDefaultSubobject<UStaticMeshComponent>("MiddleRing");
-	MiddleRing->SetupAttachment(OuterRing);
-	MiddleRing->OnComponentHit.AddDynamic(this, &AMNRTargetDummy::OnHit);
+	OuterScore = 25.0f;
 
-	InnerRing = CreateDefaultSubobject<UStaticMeshComponent>("InnerRing");
-	InnerRing->SetupAttachment(OuterRing);
-	InnerRing->OnComponentHit.AddDynamic(this, &AMNRTargetDummy::OnHit);
+	TargetPitch = -80;
+	PitchDelay = 3.0f;
 
-	CenterRing = CreateDefaultSubobject<UStaticMeshComponent>("CenterRing");
-	CenterRing->SetupAttachment(OuterRing);
-	CenterRing->OnComponentHit.AddDynamic(this, &AMNRTargetDummy::OnHit);
-	
-	OuterScore = 5.0f;
-	MiddleScore = 10.0f;
-	InnerScore = 30.0f;
-	CenterScore = 55.0f;
-	
+}
+
+void AMNRTargetDummy::OnRep_Down()
+{
+	if (bIsDown)
+	{
+		SetActorEnableCollision(!bIsDown);
+		RootComponent->SetVisibility(!bIsDown, true);
+		bIsDown = false;
+		GetWorldTimerManager().SetTimer(RespawnTimerHandle, this, &AMNRTargetDummy::OnRep_Down, PitchDelay, false);
+	}
+	else
+	{
+		SetActorEnableCollision(!bIsDown);
+		RootComponent->SetVisibility(!bIsDown, true);
+	}
+
 }
 
 void AMNRTargetDummy::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (OtherActor)
+	if (OtherActor && !bIsDown)
 	{
 		if (AMNRProjectile* Projectile = Cast<AMNRProjectile>(OtherActor))
 		{
@@ -48,19 +55,9 @@ void AMNRTargetDummy::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UP
 					{
 						PS->AddScore(OuterScore);
 					}
-					if (HitComp == MiddleRing)
-					{
-						PS->AddScore(MiddleScore);
-					}
-					if (HitComp == InnerRing)
-					{
-						PS->AddScore(InnerScore);
-					}
-					if (HitComp == CenterRing)
-					{
-						PS->AddScore(CenterScore);
-					}
-					
+
+					bIsDown = !bIsDown;
+					OnRep_Down();
 				}
 			}
 			FString InstigatorString = FString::Printf(TEXT("Instigator is: %s"), *GetNameSafe(Projectile->GetInstigator()));
@@ -70,9 +67,13 @@ void AMNRTargetDummy::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UP
 
 		FString CombinedString = FString::Printf(TEXT("Hit at Location: %s"), *GetNameSafe(HitComp));
 		DrawDebugString(GetWorld(), Hit.ImpactPoint, CombinedString, nullptr, FColor::Green, 2.0f, true);
-
-		
 	}
+
 }
 
+void AMNRTargetDummy::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(AMNRTargetDummy, bIsDown);
+}

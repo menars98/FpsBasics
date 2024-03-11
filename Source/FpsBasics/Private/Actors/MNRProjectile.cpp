@@ -27,21 +27,23 @@ AMNRProjectile::AMNRProjectile()
 	ProjectileMovement->InitialSpeed = 3000.f;
 	ProjectileMovement->MaxSpeed = 3000.f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
-	ProjectileMovement->bShouldBounce = true;
+	ProjectileMovement->bShouldBounce = false;
 
 	// Die after 3 seconds by default
-	InitialLifeSpan = 3.0f;
+	InitialLifeSpan = 1.0f;
 }
 
 void AMNRProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	// Only add impulse and destroy projectile if we hit a physics
-	if ((OtherActor != nullptr) && (OtherActor != this) && (OtherComp != nullptr) && OtherComp->IsSimulatingPhysics())
+	// add impulse and destroy projectile if we hit something
+	if ((OtherActor != nullptr) && (OtherActor != this) && (OtherComp != nullptr))
 	{
-		OtherComp->AddImpulseAtLocation(GetVelocity() * 100.0f, GetActorLocation());
+		//OtherComp->AddImpulseAtLocation(GetVelocity() * 100.0f, GetActorLocation());
 
 		Destroy();
 	}
+
+	Destroy();
 }
 
 

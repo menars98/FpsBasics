@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "MNRTargetDummy.generated.h"
 
+class UStaticMeshComponent;
+
 UCLASS()
 class FPSBASICS_API AMNRTargetDummy : public AActor
 {
@@ -18,33 +20,33 @@ public:
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 	UStaticMeshComponent* OuterRing;
 
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	UStaticMeshComponent* MiddleRing;
-
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	UStaticMeshComponent* InnerRing;
-
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	UStaticMeshComponent* CenterRing;
-
 	UPROPERTY(EditAnywhere, Category = "Credits")
 	int32 OuterScore;
 
-	UPROPERTY(EditAnywhere, Category = "Credits")
-	int32 MiddleScore;
+	UPROPERTY(EditAnywhere)
+	float TargetPitch;
 
-	UPROPERTY(EditAnywhere, Category = "Credits")
-	int32 InnerScore;
+	UPROPERTY(EditDefaultsOnly)
+	float PitchDelay;
 
-	UPROPERTY(EditAnywhere, Category = "Credits")
-	int32 CenterScore;
+	FTimerHandle PitchTimerHandle;
 
-	UPROPERTY(VisibleDefaultsOnly, Category = Bools)
+	FTimerHandle RespawnTimerHandle;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Down, VisibleDefaultsOnly, Category = Bools)
 	bool bIsDown;
 
-public:
-
 	UFUNCTION(BlueprintCallable)
-	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	virtual void OnRep_Down();
+	
 
+protected:
+
+	// BlueprintNativeEvent = C++ base implementation, can be expanded in Blueprints
+	// BlueprintCallable to allow child classes to trigger OnHit
+	UFUNCTION(BlueprintCallable)
+	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+
+	
 };
