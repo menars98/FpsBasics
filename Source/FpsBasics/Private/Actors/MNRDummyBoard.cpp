@@ -11,7 +11,7 @@ AMNRDummyBoard::AMNRDummyBoard()
 {
 
 	MiddleRing = CreateDefaultSubobject<UStaticMeshComponent>("MiddleRing");
-	MiddleRing->SetupAttachment(RootComponent);
+	MiddleRing->SetupAttachment(OuterRing);
 	MiddleRing->OnComponentHit.AddDynamic(this, &AMNRDummyBoard::OnHit);
 
 	InnerRing = CreateDefaultSubobject<UStaticMeshComponent>("InnerRing");

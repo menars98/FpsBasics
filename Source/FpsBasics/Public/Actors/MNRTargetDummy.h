@@ -7,6 +7,8 @@
 #include "MNRTargetDummy.generated.h"
 
 class UStaticMeshComponent;
+class UBoxComponent;
+class UInterpToMovementComponent;
 
 UCLASS()
 class FPSBASICS_API AMNRTargetDummy : public AActor
@@ -17,8 +19,12 @@ public:
 	// Sets default values for this actor's properties
 	AMNRTargetDummy();
 
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+	UPROPERTY(VisibleDefaultsOnly, Category = "Mesh")
 	UStaticMeshComponent* OuterRing;
+
+	//Link between bp & code
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pathing", meta = (ExposeOnSpawn = "true", MakeEditWidget = "true"))
+	TArray<FVector> PathArea;
 
 	UPROPERTY(EditAnywhere, Category = "Credits")
 	int32 OuterScore;
@@ -47,6 +53,16 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
+	virtual void BeginPlay() override;
 
+private:
+
+	//Declare moveable area
+	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
+	UBoxComponent* BoxCollider;
+
+	//Movement
+	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
+	UInterpToMovementComponent* MovementComponent;
 	
 };

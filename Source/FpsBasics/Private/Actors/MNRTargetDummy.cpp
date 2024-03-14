@@ -6,16 +6,29 @@
 #include "Actors/MNRProjectile.h"
 #include "Player/MNRPlayerState.h"
 #include "Net/UnrealNetwork.h"
+#include "Components/BoxComponent.h"
+#include "Components/InterpToMovementComponent.h"
 
 // Sets default values
 AMNRTargetDummy::AMNRTargetDummy()
 {
 	bIsDown = false;
 
+	BoxCollider = CreateDefaultSubobject<UBoxComponent>("BoxCollider");
+	RootComponent = BoxCollider;
+
 	OuterRing = CreateDefaultSubobject<UStaticMeshComponent>("OuterRing");
 	OuterRing->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	RootComponent = OuterRing;
+	OuterRing->SetupAttachment(RootComponent);
 	OuterRing->OnComponentHit.AddDynamic(this, &AMNRTargetDummy::OnHit);
+
+	MovementComponent = CreateDefaultSubobject<UInterpToMovementComponent>("MovementComponent");
+
+	//Setting default values
+	//how long the entire path takes the to run
+	MovementComponent->Duration = 5.0f;
+	MovementComponent->bSweep = true;
+	MovementComponent->BehaviourType = EInterpToBehaviourType::PingPong;
 
 	OuterScore = 25.0f;
 
@@ -69,6 +82,21 @@ void AMNRTargetDummy::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UP
 		DrawDebugString(GetWorld(), Hit.ImpactPoint, CombinedString, nullptr, FColor::Green, 2.0f, true);
 	}
 
+}
+
+void AMNRTargetDummy::BeginPlay()
+{
+	Super::BeginPlay();
+
+	//
+	MovementComponent->ControlPoints.Add(FInterpControlPoint(FVector(0.0f, 0.0f, 0.0f), true));
+
+	for (int i = 0; i < PathArea.Num(); i++)
+	{
+		MovementComponent->ControlPoints.Add(FInterpControlPoint(PathArea[i], true));
+	}
+
+	MovementComponent->FinaliseControlPoints();
 }
 
 void AMNRTargetDummy::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
