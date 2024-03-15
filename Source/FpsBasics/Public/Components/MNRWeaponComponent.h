@@ -6,7 +6,9 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "MNRWeaponComponent.generated.h"
 
+
 class AMNRCharacterBase;
+class UMNRAmmoComponent;
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class FPSBASICS_API UMNRWeaponComponent : public USkeletalMeshComponent
@@ -57,8 +59,32 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category ="Weapon")
 	FName HandSocketName;
 
+	/* Clip for Weapon */
+	//How many ammo that weapon can have, Rifle-Clip 30, Deagle-Clip 6 etc.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category ="Ammo")
+	int32 ClipSize; 
+
+	UPROPERTY()
+	int32 CurrentClip;
+
+	UPROPERTY()
+	int32 MissingAmmo;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UMNRAmmoComponent* AmmoComponent;
+
+public:
+
+	UFUNCTION()
+	void ReloadClip(AMNRCharacterBase* TargetCharacter);
+
+	/*Reload Function We can declare it here or character. I guess character is better choice*/
+	//UFUNCTION()
+	//void Reload() {if(WeaponComponent){if(AmmoComponent)} {then (Clip - Remaining clip ammo)  } }
+
 private:
 	/** The Character holding this weapon*/
 	AMNRCharacterBase* Character;
 	
+
 };

@@ -8,7 +8,6 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnScoreChanged, APlayerState*, Player, int32, NewScore, int32, Delta);
 
-
 UCLASS()
 class FPSBASICS_API AMNRPlayerState : public APlayerState
 {
@@ -29,6 +28,7 @@ protected:
 
 public:
 
+	/*Score Events*/
 	UFUNCTION(BlueprintCallable, Category = "PlayerState|Score")
 	int32 GetHitScore() const;
 
@@ -43,5 +43,4 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnScoreChanged OnScoreChanged;
 
-	
 };

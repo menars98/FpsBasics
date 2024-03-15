@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Components/MNRAmmoComponent.h"
 
 UMNRWeaponComponent::UMNRWeaponComponent()
 {
@@ -209,5 +210,15 @@ void UMNRWeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		{
 			Subsystem->RemoveMappingContext(FireMappingContext);
 		}
+	}
+}
+
+void UMNRWeaponComponent::ReloadClip(AMNRCharacterBase* TargetCharacter)
+{
+	if (CurrentClip < ClipSize)
+	{
+		
+		//@TODO Broadcast for clip
+		AmmoComponent->ReloadAmmo(TargetCharacter);
 	}
 }

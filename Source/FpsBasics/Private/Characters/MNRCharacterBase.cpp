@@ -62,9 +62,13 @@ void AMNRCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMNRCharacterBase::Look);
+
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AMNRCharacterBase::Reload);
+
 	}
 
 }
+
 
 void AMNRCharacterBase::Move(const FInputActionValue& Value)
 {
@@ -91,6 +95,17 @@ void AMNRCharacterBase::Look(const FInputActionValue& Value)
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+void AMNRCharacterBase::Reload()
+{
+	if (bHasRifle)
+	{
+		//if(bHasAmmo)
+		{
+			WeaponComponent->ReloadClip(this);
+		}
 	}
 }
 

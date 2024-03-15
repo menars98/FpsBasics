@@ -50,4 +50,7 @@ void AMNRPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AMNRPlayerState, HitScore);
+
 }
+
+
