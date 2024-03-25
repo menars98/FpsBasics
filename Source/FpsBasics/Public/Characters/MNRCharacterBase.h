@@ -5,8 +5,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "Actors/MNRAmmo.h"
 #include "Components/MNRWeaponComponent.h"
 #include "MNRCharacterBase.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnAmmoChanged, AMNRCharacterBase*, OwningActor, int32, NewAmmo, int32, Delta);
+
 
 class UInputComponent;
 class USkeletalMeshComponent;
@@ -70,9 +74,32 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	bool GetHasRifle();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
+	bool bIsRifle;
+
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	/*Ammo Types*/
+	//Right now only have rifleammo later we can use pistol or others
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	int32 RifleAmmo;
+
+	/**/
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = "OnRep_Ammo", Category = "Ammo")
+	int32 AmmoAmount;
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnAmmoChanged OnAmmoChanged;
+
+	/*Ammo Events*/
+
+	UFUNCTION()
+	void OnRep_Ammo(int32 OldAmmo);
+
+	UFUNCTION(BlueprintCallable, Category = "Ammo")
+	void AddAmmo(int32 Delta, EAmmoType AmmoType);
 
 protected:
 	/** Called for movement input */
@@ -81,7 +108,13 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
-	void Reload();
+public:
+
+	void ManuelReload();
+	
+	void Reload(EWeaponType WeaponType);
+
+	int CalculateAmmo(int NewAmmoAmount);
 
 public:
 	/** Returns Mesh1P subobject **/

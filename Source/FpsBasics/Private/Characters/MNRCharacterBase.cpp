@@ -7,6 +7,8 @@
 #include "Components/CapsuleComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Actors/MNRAmmo.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 AMNRCharacterBase::AMNRCharacterBase()
@@ -32,6 +34,7 @@ AMNRCharacterBase::AMNRCharacterBase()
 	//Mesh1P->SetRelativeRotation(FRotator(0.9f, -19.19f, 5.2f));
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
 
+	bIsRifle = true;
 }
 
 void AMNRCharacterBase::BeginPlay()
@@ -63,12 +66,11 @@ void AMNRCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMNRCharacterBase::Look);
 
-		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AMNRCharacterBase::Reload);
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AMNRCharacterBase::ManuelReload);
 
 	}
 
 }
-
 
 void AMNRCharacterBase::Move(const FInputActionValue& Value)
 {
@@ -98,15 +100,50 @@ void AMNRCharacterBase::Look(const FInputActionValue& Value)
 	}
 }
 
-void AMNRCharacterBase::Reload()
+
+//Below These Reload & CalculateAmmo is gonna change. They are here just for starting
+//@TODO Take Reload to WeaponComponent, Calculate Ammo In here & there, substract total ammo in character, weapon clip in weaponcomp. Or we can store ammo in weapons
+void AMNRCharacterBase::Reload(EWeaponType WeaponType)
 {
 	if (bHasRifle)
 	{
-		//if(bHasAmmo)
+		switch (WeaponType)
 		{
-			WeaponComponent->ReloadClip(this);
+		case EWeaponType::E_Rifle:
+			RifleAmmo = CalculateAmmo(RifleAmmo);
+			break;
+		default:
+			break;
 		}
 	}
+}
+
+int AMNRCharacterBase::CalculateAmmo(int NewAmmoAmount)
+{
+	if (WeaponComponent->CurrentClip != WeaponComponent->ClipSize)
+	{
+		if (NewAmmoAmount - (WeaponComponent->ClipSize - WeaponComponent->CurrentClip) >= 0)
+		{
+			NewAmmoAmount -= (WeaponComponent->ClipSize - WeaponComponent->CurrentClip);
+			WeaponComponent->CurrentClip = WeaponComponent->ClipSize;
+		}
+		else
+		{
+			WeaponComponent->CurrentClip += NewAmmoAmount;
+			NewAmmoAmount = 0;
+		}
+	}
+	else
+	{
+		//Pop Up No Ammo Message
+	}
+
+	return NewAmmoAmount;
+}
+
+void AMNRCharacterBase::ManuelReload()
+{
+	Reload(WeaponComponent->WeaponType);	
 }
 
 void AMNRCharacterBase::SetHasRifle(bool bNewHasRifle)
@@ -117,4 +154,40 @@ void AMNRCharacterBase::SetHasRifle(bool bNewHasRifle)
 bool AMNRCharacterBase::GetHasRifle()
 {
 	return bHasRifle;
+}
+
+
+void AMNRCharacterBase::OnRep_Ammo(int32 OldAmmo)
+{
+
+	if (bIsRifle)
+	{
+		OnAmmoChanged.Broadcast(this, RifleAmmo, RifleAmmo - OldAmmo);
+	}	
+}
+
+void AMNRCharacterBase::AddAmmo(int32 Delta, EAmmoType AmmoType)
+{
+	//Check if its negative to avoid adding negative amount
+	if (!ensure(Delta > 0.0f))
+	{
+		return;
+	}
+	switch (AmmoType)
+	{
+	case EAmmoType::E_Rifle:
+		RifleAmmo += Delta;
+		bIsRifle = true;
+		OnAmmoChanged.Broadcast(this, RifleAmmo, Delta);
+		break;
+	default:
+		break;
+	}
+}
+
+void AMNRCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AMNRCharacterBase, AmmoAmount);
 }

@@ -6,9 +6,18 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "MNRWeaponComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnClipChanged, AMNRCharacterBase*, OwningActor, int32, NewAmmo, int32, Delta);
+
+UENUM(BlueprintType)
+enum class EWeaponType : uint8
+{
+	E_Rifle UMETA(DisplayName = "Rifle")
+};
+
 
 class AMNRCharacterBase;
 class UMNRAmmoComponent;
+class AMNRAmmo;
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class FPSBASICS_API UMNRWeaponComponent : public USkeletalMeshComponent
@@ -32,6 +41,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	FVector MuzzleOffset;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon)
+	EWeaponType WeaponType;
+
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* FireMappingContext;
@@ -39,6 +51,7 @@ public:
 	/** Fire Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* FireAction;
+
 
 	/** Sets default values for this component's properties */
 	UMNRWeaponComponent();
@@ -56,7 +69,9 @@ protected:
 	UFUNCTION()
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	UPROPERTY(VisibleAnywhere, Category ="Weapon")
+public:
+
+	UPROPERTY(VisibleAnywhere, Category = "Weapon")
 	FName HandSocketName;
 
 	/* Clip for Weapon */
@@ -64,19 +79,25 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category ="Ammo")
 	int32 ClipSize; 
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = "OnRep_CurrentClip", BlueprintReadOnly, Category = "Ammo")
 	int32 CurrentClip;
 
 	UPROPERTY()
 	int32 MissingAmmo;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UMNRAmmoComponent* AmmoComponent;
+	AMNRAmmo* AmmoActor;
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnClipChanged OnClipChanged;
 
 public:
 
 	UFUNCTION()
 	void ReloadClip(AMNRCharacterBase* TargetCharacter);
+
+	UFUNCTION()
+	void OnRep_CurrentClip(int32 OldAmmo);
 
 	/*Reload Function We can declare it here or character. I guess character is better choice*/
 	//UFUNCTION()
