@@ -35,6 +35,8 @@ void UMNRWeaponComponent::AttachWeapon(AMNRCharacterBase* TargetCharacter)
 	// Attach the weapon to the First Person Character
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
 	AttachToComponent(Character->GetMesh1P(), AttachmentRules, FName(TEXT("GripPoint")));
+	//How we setup rules
+	//SetupAttachment(Character->GetMesh1P(), FName(TEXT("GripPoint")));
 
 	// switch bHasRifle so the animation blueprint can switch to another animation set
 	Character->SetHasRifle(true);
@@ -52,6 +54,7 @@ void UMNRWeaponComponent::AttachWeapon(AMNRCharacterBase* TargetCharacter)
 		{
 			// Fire
 			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &UMNRWeaponComponent::Fire);
+	
 		}
 	}
 }
@@ -181,8 +184,8 @@ void UMNRWeaponComponent::Fire()
 				// Spawn the projectile at the muzzle
 				FTransform SpawnTM = FTransform(ProjRotation, HandLocation);
 				World->SpawnActor<AMNRProjectile>(ProjectileClass, SpawnTM, ActorSpawnParams);
+				DecreaseAmmo(1, Character);
 				UE_LOG(LogTemp, Warning, TEXT("The Instigator is:%s"), *GetNameSafe(ActorSpawnParams.Instigator));
-				CurrentClip -= 1;
 			}
 			else
 			{
@@ -238,7 +241,34 @@ void UMNRWeaponComponent::ReloadClip(AMNRCharacterBase* TargetCharacter)
 
 void UMNRWeaponComponent::OnRep_CurrentClip(int32 OldAmmo)
 {
-	OnClipChanged.Broadcast(Character, CurrentClip, CurrentClip - OldAmmo);
+	OnClipChanged.Broadcast(this->GetOwner(), CurrentClip, CurrentClip - OldAmmo);
+}
+
+bool UMNRWeaponComponent::DecreaseAmmo(int32 Delta, AActor* InstigatorActor)
+{
+	//Check if its negative to avoid negative subtracting 
+	if (!ensure(Delta > 0.0f))
+	{
+		return false;
+	}
+
+	if (CurrentClip < Delta)
+	{
+		return false;
+	}
+
+	CurrentClip -= Delta;
+	OnClipChanged.Broadcast(InstigatorActor, CurrentClip, Delta);
+	return true;
+}
+
+UMNRWeaponComponent* UMNRWeaponComponent::GetComponents(AActor* FromActor)
+{
+	if (FromActor)
+	{
+		return FromActor->FindComponentByClass<UMNRWeaponComponent>();
+	}
+	return nullptr;
 }
 
 

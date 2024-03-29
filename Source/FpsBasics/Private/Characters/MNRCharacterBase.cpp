@@ -110,7 +110,20 @@ void AMNRCharacterBase::Reload(EWeaponType WeaponType)
 		switch (WeaponType)
 		{
 		case EWeaponType::E_Rifle:
-			RifleAmmo = CalculateAmmo(RifleAmmo);
+			if (WeaponComponent->CurrentClip != WeaponComponent->ClipSize)
+			{
+				if (RifleAmmo - (WeaponComponent->ClipSize - WeaponComponent->CurrentClip) >= 0)
+				{
+					RemoveAmmo((WeaponComponent->ClipSize - WeaponComponent->CurrentClip), WeaponType);
+					WeaponComponent->CurrentClip = WeaponComponent->ClipSize;
+					OnClipChanged.Broadcast(this, WeaponComponent->CurrentClip, 0);
+				}
+				else
+				{
+					WeaponComponent->CurrentClip += RifleAmmo;
+					RifleAmmo = 0;
+				}
+			}		
 			break;
 		default:
 			break;
@@ -120,12 +133,14 @@ void AMNRCharacterBase::Reload(EWeaponType WeaponType)
 
 int AMNRCharacterBase::CalculateAmmo(int NewAmmoAmount)
 {
+	//UMNRWeaponComponent* WeaponComponent = UMNRWeaponComponent::GetComponents(this);
 	if (WeaponComponent->CurrentClip != WeaponComponent->ClipSize)
 	{
 		if (NewAmmoAmount - (WeaponComponent->ClipSize - WeaponComponent->CurrentClip) >= 0)
 		{
 			NewAmmoAmount -= (WeaponComponent->ClipSize - WeaponComponent->CurrentClip);
 			WeaponComponent->CurrentClip = WeaponComponent->ClipSize;
+			OnClipChanged.Broadcast(this, WeaponComponent->CurrentClip, 0);
 		}
 		else
 		{
@@ -184,6 +199,36 @@ void AMNRCharacterBase::AddAmmo(int32 Delta, EAmmoType AmmoType)
 		break;
 	}
 }
+
+bool AMNRCharacterBase::RemoveAmmo(int32 Delta, EWeaponType WeaponType)
+{
+	//Check if its negative to avoid negative subtracting 
+	if (!ensure(Delta > 0.0f))
+	{
+		return false;
+	}
+
+	if (RifleAmmo < Delta)
+	{
+		return false;
+	}
+
+	switch (WeaponType)
+	{
+	case EWeaponType::E_Rifle:
+		RifleAmmo -= Delta;
+		bIsRifle = true;
+		OnAmmoChanged.Broadcast(this, RifleAmmo, Delta);
+		break;
+	default:
+		break;
+	}
+
+	return true;
+}
+
+
+	
 
 void AMNRCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

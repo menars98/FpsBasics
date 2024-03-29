@@ -54,7 +54,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	UMNRWeaponComponent* WeaponComponent;
 
 public:	
@@ -93,6 +93,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnAmmoChanged OnAmmoChanged;
 
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnAmmoChanged OnClipChanged;
+
 	/*Ammo Events*/
 
 	UFUNCTION()
@@ -100,6 +103,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Ammo")
 	void AddAmmo(int32 Delta, EAmmoType AmmoType);
+
+	UFUNCTION(BlueprintCallable, Category = "Ammo")
+	bool RemoveAmmo(int32 Delta, EWeaponType WeaponType);
 
 protected:
 	/** Called for movement input */

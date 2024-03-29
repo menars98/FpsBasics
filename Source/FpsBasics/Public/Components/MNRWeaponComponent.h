@@ -6,7 +6,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "MNRWeaponComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnClipChanged, AMNRCharacterBase*, OwningActor, int32, NewAmmo, int32, Delta);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnClipChanged, AActor*, InstigatorActor, int32, NewAmmo, int32, Delta);
 
 UENUM(BlueprintType)
 enum class EWeaponType : uint8
@@ -51,6 +51,8 @@ public:
 	/** Fire Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* FireAction;
+
+
 
 
 	/** Sets default values for this component's properties */
@@ -98,6 +100,13 @@ public:
 
 	UFUNCTION()
 	void OnRep_CurrentClip(int32 OldAmmo);
+
+	UFUNCTION(BlueprintCallable, Category = "Ammo")
+	bool DecreaseAmmo(int32 Delta, AActor* InstigatorActor);
+
+	UFUNCTION(BlueprintCallable, Category = "Components")
+	static UMNRWeaponComponent* GetComponents(AActor* FromActor);
+
 
 	/*Reload Function We can declare it here or character. I guess character is better choice*/
 	//UFUNCTION()
