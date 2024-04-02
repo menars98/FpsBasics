@@ -116,7 +116,7 @@ void AMNRCharacterBase::Reload(EWeaponType WeaponType)
 				{
 					RemoveAmmo((WeaponComponent->ClipSize - WeaponComponent->CurrentClip), WeaponType);
 					WeaponComponent->CurrentClip = WeaponComponent->ClipSize;
-					OnClipChanged.Broadcast(this, WeaponComponent->CurrentClip, 0);
+					WeaponComponent->OnClipChanged.Broadcast(this, WeaponComponent->CurrentClip, 0);
 				}
 				else
 				{
@@ -140,7 +140,7 @@ int AMNRCharacterBase::CalculateAmmo(int NewAmmoAmount)
 		{
 			NewAmmoAmount -= (WeaponComponent->ClipSize - WeaponComponent->CurrentClip);
 			WeaponComponent->CurrentClip = WeaponComponent->ClipSize;
-			OnClipChanged.Broadcast(this, WeaponComponent->CurrentClip, 0);
+			WeaponComponent->OnClipChanged.Broadcast(this, WeaponComponent->CurrentClip, 0);
 		}
 		else
 		{
@@ -227,8 +227,6 @@ bool AMNRCharacterBase::RemoveAmmo(int32 Delta, EWeaponType WeaponType)
 	return true;
 }
 
-
-	
 
 void AMNRCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

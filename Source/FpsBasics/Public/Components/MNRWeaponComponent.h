@@ -7,6 +7,7 @@
 #include "MNRWeaponComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnClipChanged, AActor*, InstigatorActor, int32, NewAmmo, int32, Delta);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponChanged, UMNRWeaponComponent*, WeaponComponent, AMNRCharacterBase*, OwningActor);
 
 UENUM(BlueprintType)
 enum class EWeaponType : uint8
@@ -93,6 +94,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnClipChanged OnClipChanged;
 
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnWeaponChanged OnWeaponChanged;
+
 public:
 
 	UFUNCTION()
@@ -107,6 +111,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Components")
 	static UMNRWeaponComponent* GetComponents(AActor* FromActor);
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SetWeapon(UMNRWeaponComponent* WeaponComp, AMNRCharacterBase* OwningCharacter);
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	int32 GetMaxAmmo();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	int32 GetCurrentAmmo();
 
 	/*Reload Function We can declare it here or character. I guess character is better choice*/
 	//UFUNCTION()

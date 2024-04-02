@@ -11,7 +11,6 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnAmmoChanged, AMNRCharacterBase*, OwningActor, int32, NewAmmo, int32, Delta);
 
-
 class UInputComponent;
 class USkeletalMeshComponent;
 class USceneComponent;
@@ -93,8 +92,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnAmmoChanged OnAmmoChanged;
 
-	UPROPERTY(BlueprintAssignable, Category = "Events")
-	FOnAmmoChanged OnClipChanged;
+	
+	//UPROPERTY(BlueprintAssignable, Category = "Events")
+	//FOnAmmoChanged OnClipChanged;
 
 	/*Ammo Events*/
 
@@ -106,6 +106,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Ammo")
 	bool RemoveAmmo(int32 Delta, EWeaponType WeaponType);
+
 
 protected:
 	/** Called for movement input */

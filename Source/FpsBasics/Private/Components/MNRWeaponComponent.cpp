@@ -40,6 +40,7 @@ void UMNRWeaponComponent::AttachWeapon(AMNRCharacterBase* TargetCharacter)
 
 	// switch bHasRifle so the animation blueprint can switch to another animation set
 	Character->SetHasRifle(true);
+	SetWeapon(this, Character);
 
 	// Set up action bindings
 	if (APlayerController* PlayerController = Cast<APlayerController>(Character->GetController()))
@@ -269,6 +270,21 @@ UMNRWeaponComponent* UMNRWeaponComponent::GetComponents(AActor* FromActor)
 		return FromActor->FindComponentByClass<UMNRWeaponComponent>();
 	}
 	return nullptr;
+}
+
+void UMNRWeaponComponent::SetWeapon(UMNRWeaponComponent* WeaponComp, AMNRCharacterBase* OwningCharacter)
+{
+	OnWeaponChanged.Broadcast(WeaponComp, OwningCharacter);
+}
+
+int32 UMNRWeaponComponent::GetMaxAmmo()
+{
+	return ClipSize;
+}
+
+int32 UMNRWeaponComponent::GetCurrentAmmo()
+{
+	return CurrentClip;
 }
 
 
