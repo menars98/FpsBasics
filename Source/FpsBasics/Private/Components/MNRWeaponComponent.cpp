@@ -70,12 +70,12 @@ void UMNRWeaponComponent::Fire()
 	// Try and fire a projectile
 	if (ProjectileClass != nullptr)
 	{
-		UWorld* const World = GetWorld();
-		if (World != nullptr)
+		if (CurrentClip > 0)
 		{
-			//@TODO I need to trim unnecesary codes. There are redundant codes in there
-			if (CurrentClip > 0)
+			UWorld* const World = GetWorld();
+			if (World != nullptr)
 			{
+				//@TODO I need to trim unnecesary codes. There are redundant codes in there
 				APlayerController* PlayerController = Cast<APlayerController>(Character->GetController());
 
 				const FRotator SpawnRotation = PlayerController->PlayerCameraManager->GetCameraRotation();
@@ -187,29 +187,31 @@ void UMNRWeaponComponent::Fire()
 				World->SpawnActor<AMNRProjectile>(ProjectileClass, SpawnTM, ActorSpawnParams);
 				DecreaseAmmo(1, Character);
 				UE_LOG(LogTemp, Warning, TEXT("The Instigator is:%s"), *GetNameSafe(ActorSpawnParams.Instigator));
+
+
 			}
-			else
+
+			// Try and play the sound if specified
+			if (FireSound != nullptr)
 			{
-				Character->Reload(WeaponType);
+				UGameplayStatics::PlaySoundAtLocation(this, FireSound, Character->GetActorLocation());
 			}
-			
+
+			// Try and play a firing animation if specified
+			if (FireAnimation != nullptr)
+			{
+				// Get the animation object for the arms mesh
+				UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
+				if (AnimInstance != nullptr)
+				{
+					AnimInstance->Montage_Play(FireAnimation, 1.f);
+				}
+			}
 		}
-	}
 
-	// Try and play the sound if specified
-	if (FireSound != nullptr)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, FireSound, Character->GetActorLocation());
-	}
-
-	// Try and play a firing animation if specified
-	if (FireAnimation != nullptr)
-	{
-		// Get the animation object for the arms mesh
-		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
-		if (AnimInstance != nullptr)
+		else
 		{
-			AnimInstance->Montage_Play(FireAnimation, 1.f);
+			Character->Reload(WeaponType);
 		}
 	}
 }

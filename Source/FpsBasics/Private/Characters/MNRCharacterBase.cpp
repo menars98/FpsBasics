@@ -60,6 +60,10 @@ void AMNRCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
+		//Crouching
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &AMNRCharacterBase::StartCrouch);
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &AMNRCharacterBase::StopCrouch);
+
 		//Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMNRCharacterBase::Move);
 
@@ -100,6 +104,16 @@ void AMNRCharacterBase::Look(const FInputActionValue& Value)
 	}
 }
 
+void AMNRCharacterBase::StartCrouch()
+{
+	Crouch();
+}
+
+void AMNRCharacterBase::StopCrouch()
+{
+	UnCrouch();
+}
+
 
 //Below These Reload & CalculateAmmo is gonna change. They are here just for starting
 //@TODO Take Reload to WeaponComponent, Calculate Ammo In here & there, substract total ammo in character, weapon clip in weaponcomp. Or we can store ammo in weapons
@@ -110,7 +124,7 @@ void AMNRCharacterBase::Reload(EWeaponType WeaponType)
 		switch (WeaponType)
 		{
 		case EWeaponType::E_Rifle:
-			if (WeaponComponent->CurrentClip != WeaponComponent->ClipSize)
+			if (WeaponComponent->CurrentClip < WeaponComponent->ClipSize)
 			{
 				if (RifleAmmo - (WeaponComponent->ClipSize - WeaponComponent->CurrentClip) >= 0)
 				{
@@ -122,6 +136,8 @@ void AMNRCharacterBase::Reload(EWeaponType WeaponType)
 				{
 					WeaponComponent->CurrentClip += RifleAmmo;
 					RifleAmmo = 0;
+					WeaponComponent->OnClipChanged.Broadcast(this, WeaponComponent->CurrentClip, 0);
+					OnAmmoChanged.Broadcast(this, RifleAmmo, 0);
 				}
 			}		
 			break;

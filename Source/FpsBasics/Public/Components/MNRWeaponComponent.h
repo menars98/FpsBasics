@@ -91,6 +91,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	AMNRAmmo* AmmoActor;
 
+	// I dont use this but i left it maybe i can use
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnClipChanged OnClipChanged;
 
