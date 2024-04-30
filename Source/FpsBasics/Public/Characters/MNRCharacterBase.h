@@ -17,6 +17,7 @@ class USceneComponent;
 class UCameraComponent;
 class UAnimMontage;
 class USoundBase;
+class UMNRAttributeComponent;
 
 UCLASS()
 class FPSBASICS_API AMNRCharacterBase : public ACharacter
@@ -64,6 +65,13 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	UMNRWeaponComponent* WeaponComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UMNRAttributeComponent* AttributeComp;
+
+	/*For Material Visual Effect */
+	UPROPERTY(VisibleAnywhere, Category = "Effects")
+	FName TimeToHitParamName;
 
 public:	
 	/** Bool for AnimBP to switch to another animation set */
@@ -120,10 +128,12 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
-
 	void StartCrouch();
 	
 	void StopCrouch();
+
+	UFUNCTION()
+	void OnHealthChanged(AActor* InstigatorActor, UMNRAttributeComponent* OwningComp, float NewHealth, float Delta);
 
 public:
 
@@ -138,5 +148,12 @@ public:
 	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
+
+	UFUNCTION(Exec)
+	void HealSelf(float Amount = 100);
+
+protected:
+
+	virtual void PostInitializeComponents() override;
 
 };

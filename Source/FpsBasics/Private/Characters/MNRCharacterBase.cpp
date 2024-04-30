@@ -9,6 +9,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Actors/MNRAmmo.h"
 #include "Net/UnrealNetwork.h"
+#include "Components/MNRAttributeComponent.h"
 
 // Sets default values
 AMNRCharacterBase::AMNRCharacterBase()
@@ -34,7 +35,21 @@ AMNRCharacterBase::AMNRCharacterBase()
 	//Mesh1P->SetRelativeRotation(FRotator(0.9f, -19.19f, 5.2f));
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
 
+	AttributeComp = CreateDefaultSubobject<UMNRAttributeComponent>("AttributeComp");
+
 	bIsRifle = true;
+}
+
+void AMNRCharacterBase::HealSelf(float Amount)
+{
+	AttributeComp->ApplyHealthChange(this, Amount);
+}
+
+void AMNRCharacterBase::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	AttributeComp->OnHealthChanged.AddDynamic(this, &AMNRCharacterBase::OnHealthChanged);
 }
 
 void AMNRCharacterBase::BeginPlay()
@@ -112,6 +127,25 @@ void AMNRCharacterBase::StartCrouch()
 void AMNRCharacterBase::StopCrouch()
 {
 	UnCrouch();
+}
+
+void AMNRCharacterBase::OnHealthChanged(AActor* InstigatorActor, UMNRAttributeComponent* OwningComp, float NewHealth, float Delta)
+{
+	if (Delta < 0.0f)
+	{
+		GetMesh()->SetScalarParameterValueOnMaterials(TimeToHitParamName, GetWorld()->TimeSeconds);
+
+	}
+
+	if (NewHealth <= 0.0f && Delta <= 0.0f)
+	{
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		SetActorEnableCollision(false);
+		DisableInput(PC);
+
+		SetLifeSpan(5.0f);
+
+	}
 }
 
 
