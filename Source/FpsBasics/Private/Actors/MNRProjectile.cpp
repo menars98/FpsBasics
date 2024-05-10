@@ -4,6 +4,7 @@
 #include "Actors/MNRProjectile.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/SphereComponent.h"
+#include "Gameplay/MNRBlueprintFunctionLibrary.h"
 
 // Sets default values
 AMNRProjectile::AMNRProjectile()
@@ -31,6 +32,7 @@ AMNRProjectile::AMNRProjectile()
 
 	// Die after 3 seconds by default
 	InitialLifeSpan = 1.0f;
+	DamageAmount = 20.0f;
 }
 
 void AMNRProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -43,7 +45,11 @@ void AMNRProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 		Destroy();
 	}
 
-	Destroy();
+	//Apply damage & impulse
+	if (UMNRBlueprintFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, DamageAmount, Hit))
+	{
+
+	}
 }
 
 

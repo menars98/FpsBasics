@@ -45,6 +45,11 @@ void AMNRCharacterBase::HealSelf(float Amount)
 	AttributeComp->ApplyHealthChange(this, Amount);
 }
 
+void AMNRCharacterBase::DamageSelf(float Amount)
+{
+	AttributeComp->ApplyHealthChange(this, Amount);
+}
+
 void AMNRCharacterBase::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();

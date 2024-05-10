@@ -14,6 +14,8 @@ class FPSBASICS_API AMNRProjectile : public AActor
 {
 	GENERATED_BODY()
 	
+protected:
+
 	/** Sphere collision component */
 	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
 	USphereComponent* CollisionComp;
@@ -21,6 +23,9 @@ class FPSBASICS_API AMNRProjectile : public AActor
 	/** Projectile movement component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UProjectileMovementComponent* ProjectileMovement;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Damage")
+	float DamageAmount;
 
 public:
 	AMNRProjectile();

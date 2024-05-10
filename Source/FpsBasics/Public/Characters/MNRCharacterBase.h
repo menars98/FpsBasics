@@ -152,6 +152,9 @@ public:
 	UFUNCTION(Exec)
 	void HealSelf(float Amount = 100);
 
+	UFUNCTION(Exec)
+	void DamageSelf(float Amount = 50);
+
 protected:
 
 	virtual void PostInitializeComponents() override;
