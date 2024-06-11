@@ -6,22 +6,24 @@
 #include "GameFramework/Character.h"
 #include "MNRAICharacter.generated.h"
 
+class UPawnSensingComponent;
+
 UCLASS()
 class FPSBASICS_API AMNRAICharacter : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
+
 	AMNRAICharacter();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	virtual void PostInitializeComponents() override;
 
+	UPROPERTY(VisibleAnywhere, Category = "AI|Components")
+	UPawnSensingComponent* PawnSensingComp;
 
+	UFUNCTION()
+	void OnPawnSeen(APawn* Pawn);
 };

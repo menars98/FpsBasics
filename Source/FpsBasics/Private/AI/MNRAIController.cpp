@@ -10,13 +10,18 @@ void AMNRAIController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	RunBehaviorTree(BehaviorTree);
+	if (ensureMsgf(BehaviorTree, TEXT("BehaviorTree is nullptr, please assign BT in your AI Controller")))
+	{
+		RunBehaviorTree(BehaviorTree);
+	}
 
-	APawn* MyPawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	
+
+	/*APawn* MyPawn = UGameplayStatics::GetPlayerPawn(this, 0);
 	if (MyPawn)
 	{
 		GetBlackboardComponent()->SetValueAsVector("MoveToLocation", MyPawn->GetActorLocation());
 
 		GetBlackboardComponent()->SetValueAsObject("TargetActor", MyPawn);
-	}
+	}*/
 }
