@@ -2,7 +2,8 @@
 
 
 #include "AI/MNRBTTask_HealBack.h"
-#include "AIModule/Classes/AIController.h"
+//#include "AIModule/Classes/AIController.h"
+#include "AIController.h"
 #include <Components/MNRAttributeComponent.h>
 
 EBTNodeResult::Type UMNRBTTask_HealBack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)

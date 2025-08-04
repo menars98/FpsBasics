@@ -53,9 +53,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* FireAction;
 
-
-
-
 	/** Sets default values for this component's properties */
 	UMNRWeaponComponent();
 

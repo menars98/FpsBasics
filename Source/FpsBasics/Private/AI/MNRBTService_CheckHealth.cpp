@@ -2,7 +2,8 @@
 
 
 #include "AI/MNRBTService_CheckHealth.h"
-#include "AIModule/Classes/AIController.h"
+//#include "AIModule/Classes/AIController.h"
+#include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include <Components/MNRAttributeComponent.h>
 

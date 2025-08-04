@@ -2,7 +2,8 @@
 
 
 #include "AI/MNRBTTask_RangedAttack.h"
-#include "AIModule/Classes/AIController.h"
+//#include "AIModule/Classes/AIController.h"
+#include "AIController.h"
 #include "GameFramework/Character.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
