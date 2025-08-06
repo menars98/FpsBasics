@@ -4,17 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "WeaponTypes.h"
 #include "MNRWeaponComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnClipChanged, AActor*, InstigatorActor, int32, NewAmmo, int32, Delta);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponChanged, UMNRWeaponComponent*, WeaponComponent, AMNRCharacterBase*, OwningActor);
-
-UENUM(BlueprintType)
-enum class EWeaponType : uint8
-{
-	E_Rifle UMETA(DisplayName = "Rifle")
-};
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponChanged, UMNRWeaponComponent*, WeaponComponent, AActor*, OwningActor);
 
 class AMNRCharacterBase;
 class UMNRAmmoComponent;
@@ -69,6 +63,7 @@ protected:
 	UFUNCTION()
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	
 public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
@@ -98,6 +93,9 @@ public:
 public:
 
 	UFUNCTION()
+	void Reload();
+
+	UFUNCTION()
 	void ReloadClip(AMNRCharacterBase* TargetCharacter);
 
 	UFUNCTION()
@@ -110,12 +108,16 @@ public:
 	static UMNRWeaponComponent* GetComponents(AActor* FromActor);
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void SetWeapon(UMNRWeaponComponent* WeaponComp, AMNRCharacterBase* OwningCharacter);
+	void SetWeapon(UMNRWeaponComponent* WeaponComp, AActor* OwningCharacter);
 
+	// Bu fonksiyon, karakter silahý kuþandýðýnda çaðrýlacak.
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SetCharacterOwner(AMNRCharacterBase* NewOwner);
+
+	UFUNCTION(BlueprintPure, Category = "Weapon")
 	int32 GetMaxAmmo();
 
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	UFUNCTION(BlueprintPure, Category = "Weapon")
 	int32 GetCurrentAmmo();
 
 	/*Reload Function We can declare it here or character. I guess character is better choice*/
@@ -123,8 +125,17 @@ public:
 	//void Reload() {if(WeaponComponent){if(AmmoComponent)} {then (Clip - Remaining clip ammo)  } }
 
 private:
-	/** The Character holding this weapon*/
-	AMNRCharacterBase* Character;
 	
+	/** The Character holding this weapon*/
+	UPROPERTY()
+	TObjectPtr<AMNRCharacterBase> CharacterOwner;
+	
+	// Determines where the character is aiming (camera for the player, different logic for AI).
+	bool GetAimingTransform(FTransform& OutAimTransform) const;
 
+	// It finds the target by sending a beam in the direction of the given aiming point.
+	bool FindAimTarget(const FTransform& AimTransform, FHitResult& OutHitResult) const;
+
+	// Calculates the correct rotation of the bullet based on the barrel position and aiming target.
+	FRotator CalculateProjectileRotation(const FVector& MuzzleLocation, const FHitResult& AimHitResult) const;
 };

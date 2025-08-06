@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/MNRAmmoComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Actors/MNRAmmo.h"
@@ -26,24 +27,24 @@ UMNRWeaponComponent::UMNRWeaponComponent()
 
 void UMNRWeaponComponent::AttachWeapon(AMNRCharacterBase* TargetCharacter)
 {
-	Character = TargetCharacter;
-	if (Character == nullptr)
+	CharacterOwner = TargetCharacter;
+	if (CharacterOwner == nullptr)
 	{
 		return;
 	}
-
-	// Attach the weapon to the First Person Character
+	/*
+	// Attach the weapon to the First Person CharacterOwner
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
-	AttachToComponent(Character->GetMesh1P(), AttachmentRules, FName(TEXT("GripPoint")));
+	AttachToComponent(CharacterOwner->GetMesh1P(), AttachmentRules, FName(TEXT("GripPoint")));
 	//How we setup rules
-	//SetupAttachment(Character->GetMesh1P(), FName(TEXT("GripPoint")));
+	//SetupAttachment(CharacterOwner->GetMesh1P(), FName(TEXT("GripPoint")));
 
 	// switch bHasRifle so the animation blueprint can switch to another animation set
-	Character->SetHasRifle(true);
-	SetWeapon(this, Character);
+	CharacterOwner->SetHasRifle(true);
+	SetWeapon(this, CharacterOwner);
 
 	// Set up action bindings
-	if (APlayerController* PlayerController = Cast<APlayerController>(Character->GetController()))
+	if (APlayerController* PlayerController = Cast<APlayerController>(CharacterOwner->GetController()))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
@@ -57,173 +58,74 @@ void UMNRWeaponComponent::AttachWeapon(AMNRCharacterBase* TargetCharacter)
 			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &UMNRWeaponComponent::Fire);
 	
 		}
-	}
+	}*/
 }
 
 void UMNRWeaponComponent::Fire()
 {
-	if (Character == nullptr || Character->GetController() == nullptr)
+
+	if (CharacterOwner == nullptr || CharacterOwner->GetController() == nullptr || ProjectileClass == nullptr)
 	{
 		return;
 	}
 
-	// Try and fire a projectile
-	if (ProjectileClass != nullptr)
+	if (CurrentClip <= 0)
 	{
-		if (CurrentClip > 0)
+		Reload();
+		return;
+	}
+
+	FTransform AimTransform;
+	if (!GetAimingTransform(AimTransform))
+	{
+		// If the aiming direction cannot be obtained, do not fire.
+		return;
+	}
+
+	FHitResult AimHitResult;
+	const bool bHitTarget = FindAimTarget(AimTransform, AimHitResult);
+
+	const FVector MuzzleLocation = GetOwner()->GetActorLocation() + AimTransform.GetRotation().RotateVector(MuzzleOffset);
+	const FRotator ProjectileRotation = CalculateProjectileRotation(MuzzleLocation, AimHitResult);
+
+	// Spawn Bullet
+	UWorld* const World = GetWorld();
+	if (World)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		SpawnParams.Instigator = CharacterOwner;
+		SpawnParams.Owner = CharacterOwner;
+
+		FTransform SpawnTM = FTransform(ProjectileRotation, MuzzleLocation);
+		World->SpawnActor<AMNRProjectile>(ProjectileClass, SpawnTM, SpawnParams);
+	}
+
+	DecreaseAmmo(1, CharacterOwner);
+
+	// Play feedback
+	if (FireSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FireSound, CharacterOwner->GetActorLocation());
+	}
+
+	if (FireAnimation)
+	{
+		if (UAnimInstance* AnimInstance = CharacterOwner->GetMesh1P()->GetAnimInstance())
 		{
-			UWorld* const World = GetWorld();
-			if (World != nullptr)
-			{
-				//@TODO I need to trim unnecesary codes. There are redundant codes in there
-				APlayerController* PlayerController = Cast<APlayerController>(Character->GetController());
-
-				const FRotator SpawnRotation = PlayerController->PlayerCameraManager->GetCameraRotation();
-
-				FVector HandLocation = GetOwner()->GetActorLocation() + SpawnRotation.RotateVector(MuzzleOffset);
-
-				//Set Spawn Collision Handling Override
-				FActorSpawnParameters ActorSpawnParams;
-				ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-				ActorSpawnParams.Instigator = Character;
-
-				/*Logic New	*/
-				//@TODO we can make subclasses for Fire logic to read more easily. /**/
-
-				/*GetWeaponTargetingSourceLocation*/
-
-				// Use Pawn's location as a base
-				APawn* const AvatarPawn = Cast<APawn>(Character);
-				check(AvatarPawn);
-
-				const FVector SourceLoc = AvatarPawn->GetActorLocation();
-				const FQuat SourceRot = AvatarPawn->GetActorQuat();
-
-				FVector TargetingSourceLocation = SourceLoc;
-
-				/**/
-
-				/*GetTargetingTransform*/
-
-				AController* SourcePawnController = AvatarPawn->GetController();
-
-				const FVector ActorLoc = AvatarPawn->GetActorLocation();
-				FQuat AimQuat = AvatarPawn->GetActorQuat();
-				AController* Controller = AvatarPawn->Controller;
-				//FVector SourceLoc;
-
-				double FocalDistance = 1024.0f;
-				FVector FocalLoc;
-
-				FVector CamLoc;
-				FRotator CamRot;
-				bool bFoundFocus = false;
-
-				PlayerController->GetPlayerViewPoint(CamLoc, CamRot);
-
-				// Determine initial focal point to 
-				FVector AimDir = CamRot.Vector().GetSafeNormal();
-				FocalLoc = CamLoc + (AimDir * FocalDistance);
-
-				// Move the start and focal point up in front of pawn
-				if (PlayerController)
-				{
-					const FVector WeaponLoc = SourceLoc;
-					CamLoc = FocalLoc + (((WeaponLoc - FocalLoc) | AimDir) * AimDir);
-					FocalLoc = CamLoc + (AimDir * FocalDistance);
-				}
-				FTransform GetTargetingTransform = FTransform(CamRot, CamLoc);
-
-				/* PerformLocalTargeting*/
-
-				//@TODO: Should do more complicated logic here when the player is close to a wall, etc...
-				const FTransform TargetTransform = GetTargetingTransform;
-				FVector AimDirection = TargetTransform.GetUnitAxis(EAxis::X);
-				FVector StartTrace = TargetTransform.GetTranslation();
-				FVector EndAim = StartTrace + AimDirection * 2500;
-
-				//DrawDebugSphere(GetWorld(),StartTrace + (AimDirection * 1000.0f),3.0f,1, FColor::Red, false, 3.0f, 0, 2.0f);
-				//DrawDebugLine(GetWorld(), StartTrace, StartTrace + (AimDir * 100.0f), FColor::Yellow, false, 2.0f, 0, 1.0f);
-
-				/**/
-				FHitResult Hit;
-				FRotator ProjRotation;
-
-				FCollisionObjectQueryParams ObjParams;
-				ObjParams.AddObjectTypesToQuery(ECC_WorldDynamic);
-				ObjParams.AddObjectTypesToQuery(ECC_WorldStatic);
-				//ObjParams.AddObjectTypesToQuery(ECC_Pawn);
-
-				FCollisionQueryParams Params;
-				Params.AddIgnoredActor(GetOwner());
-
-				FCollisionShape Shape;
-				Shape.SetSphere(5.0f);
-
-				bool bBlockingHit = GetWorld()->SweepSingleByObjectType(Hit, StartTrace, EndAim, FQuat::Identity, ObjParams, Shape, Params);
-				FColor LineColor = bBlockingHit ? FColor::Green : FColor::Red;
-				FColor SphereColor = bBlockingHit ? FColor::Blue : FColor::Black;
-
-				DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 3.0f, 1, FColor::Red, false, 3.0f, 0, 2.0f);
-				// true if we got to a blocking hit (Alternative: SweepSingleByChannel with ECC_WorldDynamic)
-				if (bBlockingHit)
-				{
-					// Adjust location to end up at crosshair look-at
-					ProjRotation = FRotationMatrix::MakeFromX(Hit.ImpactPoint - HandLocation).Rotator();
-
-					//DrawDebugLine(GetWorld(), TraceStart, TraceEnd , LineColor, false, 0.0f, 5.0f, 5.0f);
-					//DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 3.0f, 1, SphereColor, false, 2.0f, 0.0f, 5.0f);
-				}
-				else
-				{
-					// Fall-back since we failed to find any blocking hit
-					ProjRotation = FRotationMatrix::MakeFromX(EndAim - HandLocation).Rotator();
-					//DrawDebugLine(GetWorld(), TraceStart, TraceEnd, LineColor, false, 0.0f, 5.0f, 5.0f);
-					//DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 3.0f, 1, SphereColor, false, 2.0f, 0.0f, 5.0f);
-				}
-
-				// Spawn the projectile at the muzzle
-				FTransform SpawnTM = FTransform(ProjRotation, HandLocation);
-				World->SpawnActor<AMNRProjectile>(ProjectileClass, SpawnTM, ActorSpawnParams);
-				DecreaseAmmo(1, Character);
-				UE_LOG(LogTemp, Warning, TEXT("The Instigator is:%s"), *GetNameSafe(ActorSpawnParams.Instigator));
-
-
-			}
-
-			// Try and play the sound if specified
-			if (FireSound != nullptr)
-			{
-				UGameplayStatics::PlaySoundAtLocation(this, FireSound, Character->GetActorLocation());
-			}
-
-			// Try and play a firing animation if specified
-			if (FireAnimation != nullptr)
-			{
-				// Get the animation object for the arms mesh
-				UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
-				if (AnimInstance != nullptr)
-				{
-					AnimInstance->Montage_Play(FireAnimation, 1.f);
-				}
-			}
-		}
-
-		else
-		{
-			Character->Reload(WeaponType);
+			AnimInstance->Montage_Play(FireAnimation, 1.f);
 		}
 	}
 }
 
 void UMNRWeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	if (Character == nullptr)
+	if (CharacterOwner == nullptr)
 	{
 		return;
 	}
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(Character->GetController()))
+	if (APlayerController* PlayerController = Cast<APlayerController>(CharacterOwner->GetController()))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
@@ -274,9 +176,14 @@ UMNRWeaponComponent* UMNRWeaponComponent::GetComponents(AActor* FromActor)
 	return nullptr;
 }
 
-void UMNRWeaponComponent::SetWeapon(UMNRWeaponComponent* WeaponComp, AMNRCharacterBase* OwningCharacter)
+void UMNRWeaponComponent::SetWeapon(UMNRWeaponComponent* WeaponComp, AActor* OwningCharacter)
 {
 	OnWeaponChanged.Broadcast(WeaponComp, OwningCharacter);
+}
+
+void UMNRWeaponComponent::SetCharacterOwner(AMNRCharacterBase* NewOwner)
+{
+	CharacterOwner = NewOwner;
 }
 
 int32 UMNRWeaponComponent::GetMaxAmmo()
@@ -289,6 +196,93 @@ int32 UMNRWeaponComponent::GetCurrentAmmo()
 	return CurrentClip;
 }
 
+void UMNRWeaponComponent::Reload()
+{
+	// If it is already full or the magazine loading animation is playing, do nothing.
+	if (CurrentClip == ClipSize /*|| bIsReloading*/)
+	{
+		return;
+	}
+
+	// Find the character we own and its AmmoComponent.
+	if (!CharacterOwner) return;
+
+	UMNRAmmoComponent* AmmoComp = CharacterOwner->FindComponentByClass<UMNRAmmoComponent>();
+	if (!AmmoComp) return;
+
+	// How many bullets do we need to fill the magazine?
+	const int32 AmmoNeeded = ClipSize - CurrentClip;
+	if (AmmoNeeded <= 0) return;
+
+	// Try to get the bullet we need from AmmoComponent.
+	const int32 AmmoToTake = AmmoComp->GetAmmoCount(WeaponType);
+	const int32 AmmoToMove = FMath::Min(AmmoNeeded, AmmoToTake);
+
+	if (AmmoToMove > 0)
+	{
+		// If we have ammunition, consume it from AmmoComponent.
+		if (AmmoComp->ConsumeAmmo(WeaponType, AmmoToMove))
+		{
+			// @TODO: Play the animation and sounds here. Start a timer.
+			// When the timer expires, execute the following line.
+			CurrentClip += AmmoToMove;
+			OnClipChanged.Broadcast(this->GetOwner(), CurrentClip, 0); // Update UI
+		}
+	}
+}
+
+bool UMNRWeaponComponent::GetAimingTransform(FTransform& OutAimTransform) const
+{
+	APlayerController* PlayerController = Cast<APlayerController>(CharacterOwner->GetController());
+	if (!PlayerController)
+	{
+		// @TODO: AI targeting logic can be added here.
+		// For now, we only support the player.
+		return false;
+	}
+
+	FVector CamLoc;
+	FRotator CamRot;
+	PlayerController->GetPlayerViewPoint(CamLoc, CamRot);
+	OutAimTransform = FTransform(CamRot, CamLoc);
+	return true;
+}
+
+bool UMNRWeaponComponent::FindAimTarget(const FTransform& AimTransform, FHitResult& OutHitResult) const
+{
+	const FVector StartTrace = AimTransform.GetTranslation();
+	const FVector AimDirection = AimTransform.GetUnitAxis(EAxis::X);
+	const FVector EndTrace = StartTrace + AimDirection * 2500.0f; // Range
+
+	FCollisionObjectQueryParams ObjParams;
+	ObjParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+	ObjParams.AddObjectTypesToQuery(ECC_WorldStatic);
+	ObjParams.AddObjectTypesToQuery(ECC_Pawn); // To shoot characters too
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(GetOwner());
+	Params.AddIgnoredActor(CharacterOwner);
+
+	return GetWorld()->LineTraceSingleByObjectType(OutHitResult, StartTrace, EndTrace, ObjParams, Params);
+}
+
+FRotator UMNRWeaponComponent::CalculateProjectileRotation(const FVector& MuzzleLocation, const FHitResult& AimHitResult) const
+{
+	FVector AimDirection;
+	if (AimHitResult.bBlockingHit)
+	{
+		// If we hit a target, aim from the barrel toward that point.
+		AimDirection = AimHitResult.ImpactPoint - MuzzleLocation;
+	}
+	else
+	{
+		// If we didn't hit anything, aim at the furthest point from the barrel.
+		AimDirection = AimHitResult.TraceEnd - MuzzleLocation;
+	}
+
+	return AimDirection.Rotation();
+
+}
 
 void UMNRWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

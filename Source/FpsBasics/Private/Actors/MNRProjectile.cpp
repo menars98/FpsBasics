@@ -37,18 +37,19 @@ AMNRProjectile::AMNRProjectile()
 
 void AMNRProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	// add impulse and destroy projectile if we hit something
-	if ((OtherActor != nullptr) && (OtherActor != this) && (OtherComp != nullptr))
+	// If the actor we collided with is ourselves or our owner, do nothing and return.
+	if (OtherActor && (OtherActor == this || OtherActor == GetOwner()))
 	{
-		//OtherComp->AddImpulseAtLocation(GetVelocity() * 100.0f, GetActorLocation());
-
-		Destroy();
+		
+		return;
 	}
+
+	Destroy();
 
 	//Apply damage & impulse
 	if (UMNRBlueprintFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, DamageAmount, Hit))
 	{
-
+		
 	}
 }
 

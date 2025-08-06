@@ -4,13 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "WeaponTypes.h"
 #include "MNRAmmo.generated.h"
-
-UENUM(BlueprintType)
-enum class EAmmoType : uint8
-{
-	E_Rifle UMETA(DisplayName = "Rifle")
-};
 
 UCLASS()
 class FPSBASICS_API AMNRAmmo : public AActor
@@ -32,9 +27,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo")
 	int32 AmmoAmount;
 	
-	//Ammo type for adding
+	//Weapon ammo type for adding
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo")
-	EAmmoType AmmoType;
+	EWeaponType AmmoType;
 
 	//UPROPERTY(BlueprintAssignable, Category = "Events")
 	//FOnAmmoChanged OnAmmoChanged;

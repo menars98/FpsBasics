@@ -6,10 +6,11 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "Actors/MNRAmmo.h"
+#include "WeaponTypes.h"
 #include "Components/MNRWeaponComponent.h"
 #include "MNRCharacterBase.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnAmmoChanged, AMNRCharacterBase*, OwningActor, int32, NewAmmo, int32, Delta);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnAmmoChanged, AMNRCharacterBase*, OwningActor, int32, NewAmmo, int32, Delta);
 
 class UInputComponent;
 class USkeletalMeshComponent;
@@ -18,6 +19,7 @@ class UCameraComponent;
 class UAnimMontage;
 class USoundBase;
 class UMNRAttributeComponent;
+class UMNRAmmoComponent;
 
 UCLASS()
 class FPSBASICS_API AMNRCharacterBase : public ACharacter
@@ -28,7 +30,7 @@ public:
 	AMNRCharacterBase();
 
 	/** Pawn mesh: 1st person view (arms; seen only by self) */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+	UPROPERTY(BlueprintReadOnly,VisibleDefaultsOnly, Category = Mesh)
 	USkeletalMeshComponent* Mesh1P;
 
 	/** First person camera */
@@ -67,59 +69,50 @@ protected:
 	UMNRWeaponComponent* WeaponComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UMNRAmmoComponent> AmmoComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UMNRAttributeComponent* AttributeComp;
 
 	/*For Material Visual Effect */
 	UPROPERTY(VisibleAnywhere, Category = "Effects")
 	FName TimeToHitParamName;
 
-public:	
-	/** Bool for AnimBP to switch to another animation set */
+	// Bool for AnimBP to switch to another animation set 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	bool bHasRifle;
-
-	/** Setter to set the bool */
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void SetHasRifle(bool bNewHasRifle);
-
-	/** Getter for the bool */
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	bool GetHasRifle();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	bool bIsRifle;
 
+public:	
+
+	// Setter to set the bool
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SetHasRifle(bool bNewHasRifle);
+
+	// Getter for the bool
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	bool GetHasRifle();
+
+	// Returns Mesh1P subobject 
+	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
+	// Returns FirstPersonCameraComponent subobject 
+	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
+
+	UFUNCTION(BlueprintCallable, Category = "Ammo")
+	void ManuelReload();
+
+	// --- End Ammo Events ---
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	/*Ammo Types*/
-	//Right now only have rifleammo later we can use pistol or others
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	int32 RifleAmmo;
+	// Getter For AmmoComponent
+	UFUNCTION(BlueprintPure, Category = "Components")
+	UMNRAmmoComponent* GetAmmoComponent() const { return AmmoComp.Get(); }
 
-	/**/
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = "OnRep_Ammo", Category = "Ammo")
-	int32 AmmoAmount;
-
-	UPROPERTY(BlueprintAssignable, Category = "Events")
-	FOnAmmoChanged OnAmmoChanged;
-
-	
 	//UPROPERTY(BlueprintAssignable, Category = "Events")
 	//FOnAmmoChanged OnClipChanged;
-
-	/*Ammo Events*/
-
-	UFUNCTION()
-	void OnRep_Ammo(int32 OldAmmo);
-
-	UFUNCTION(BlueprintCallable, Category = "Ammo")
-	void AddAmmo(int32 Delta, EAmmoType AmmoType);
-
-	UFUNCTION(BlueprintCallable, Category = "Ammo")
-	bool RemoveAmmo(int32 Delta, EWeaponType WeaponType);
-
 
 protected:
 	/** Called for movement input */
@@ -136,19 +129,6 @@ protected:
 	void OnHealthChanged(AActor* InstigatorActor, UMNRAttributeComponent* OwningComp, float NewHealth, float Delta);
 
 public:
-
-	void ManuelReload();
-	
-	void Reload(EWeaponType WeaponType);
-
-	int CalculateAmmo(int NewAmmoAmount);
-
-public:
-	/** Returns Mesh1P subobject **/
-	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
-	/** Returns FirstPersonCameraComponent subobject **/
-	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
-
 	UFUNCTION(Exec)
 	void HealSelf(float Amount = 100);
 
@@ -160,3 +140,37 @@ protected:
 	virtual void PostInitializeComponents() override;
 
 };
+
+
+/*TRASH
+
+	// --- Start Ammo Events-- -
+	UFUNCTION()
+	void OnRep_Ammo(int32 OldAmmo);
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnAmmoChanged OnAmmoChanged;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = "OnRep_Ammo", Category = "Ammo")
+	int32 AmmoAmount;
+
+//Ammo Types
+//Right now only have rifleammo later we can use pistol or others
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+int32 RifleAmmo;
+
+
+
+		UFUNCTION(BlueprintCallable, Category = "Ammo")
+	void AddAmmo(int32 Delta, EAmmoType AmmoType);
+
+	UFUNCTION(BlueprintCallable, Category = "Ammo")
+	bool RemoveAmmo(int32 Delta, EWeaponType WeaponType);
+
+
+	// ---- Changed ----
+	//void Reload(EWeaponType WeaponType);
+
+	//int CalculateAmmo(int NewAmmoAmount);
+	//--------------------
+*/

@@ -8,7 +8,7 @@
 // Sets default values
 AMNRAmmo::AMNRAmmo()
 {
-	AmmoType = EAmmoType::E_Rifle;
+	AmmoType = EWeaponType::E_Rifle;
 	AmmoAmount = 30;
 }
 

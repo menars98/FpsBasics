@@ -9,13 +9,15 @@
 #include "EnhancedInputSubsystems.h"
 #include "Actors/MNRAmmo.h"
 #include "Net/UnrealNetwork.h"
+#include "Components/MNRAmmoComponent.h"
 #include "Components/MNRAttributeComponent.h"
+
 
 // Sets default values
 AMNRCharacterBase::AMNRCharacterBase()
 {
 	// Character doesnt have a rifle at start
-	bHasRifle = false;
+	//bHasRifle = false;
 
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
@@ -36,8 +38,9 @@ AMNRCharacterBase::AMNRCharacterBase()
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
 
 	AttributeComp = CreateDefaultSubobject<UMNRAttributeComponent>("AttributeComp");
+	AmmoComp = CreateDefaultSubobject<UMNRAmmoComponent>(TEXT("AmmoComp"));
 
-	bIsRifle = true;
+	//bIsRifle = true;
 }
 
 void AMNRCharacterBase::HealSelf(float Amount)
@@ -90,7 +93,7 @@ void AMNRCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMNRCharacterBase::Look);
 
-		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AMNRCharacterBase::ManuelReload);
+		//EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AMNRCharacterBase::ManuelReload);
 
 	}
 
@@ -153,6 +156,42 @@ void AMNRCharacterBase::OnHealthChanged(AActor* InstigatorActor, UMNRAttributeCo
 	}
 }
 
+void AMNRCharacterBase::ManuelReload()
+{
+	if (WeaponComponent)
+	{
+		WeaponComponent->Reload();
+	}
+}
+void AMNRCharacterBase::SetHasRifle(bool bNewHasRifle)
+{
+	bHasRifle = bNewHasRifle;
+}
+
+bool AMNRCharacterBase::GetHasRifle()
+{
+	return bHasRifle;
+}
+
+/*
+
+
+
+void AMNRCharacterBase::OnRep_Ammo(int32 OldAmmo)
+{
+
+	if (bIsRifle)
+	{
+		OnAmmoChanged.Broadcast(this, RifleAmmo, RifleAmmo - OldAmmo);
+	}	
+}
+
+void AMNRCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AMNRCharacterBase, AmmoAmount);
+}
 
 //Below These Reload & CalculateAmmo is gonna change. They are here just for starting
 //@TODO Take Reload to WeaponComponent, Calculate Ammo In here & there, substract total ammo in character, weapon clip in weaponcomp. Or we can store ammo in weapons
@@ -178,14 +217,14 @@ void AMNRCharacterBase::Reload(EWeaponType WeaponType)
 					WeaponComponent->OnClipChanged.Broadcast(this, WeaponComponent->CurrentClip, 0);
 					OnAmmoChanged.Broadcast(this, RifleAmmo, 0);
 				}
-			}		
+			}
 			break;
 		default:
 			break;
 		}
 	}
+	return;
 }
-
 int AMNRCharacterBase::CalculateAmmo(int NewAmmoAmount)
 {
 	//UMNRWeaponComponent* WeaponComponent = UMNRWeaponComponent::GetComponents(this);
@@ -210,82 +249,4 @@ int AMNRCharacterBase::CalculateAmmo(int NewAmmoAmount)
 
 	return NewAmmoAmount;
 }
-
-void AMNRCharacterBase::ManuelReload()
-{
-	Reload(WeaponComponent->WeaponType);	
-}
-
-void AMNRCharacterBase::SetHasRifle(bool bNewHasRifle)
-{
-	bHasRifle = bNewHasRifle;
-}
-
-bool AMNRCharacterBase::GetHasRifle()
-{
-	return bHasRifle;
-}
-
-
-void AMNRCharacterBase::OnRep_Ammo(int32 OldAmmo)
-{
-
-	if (bIsRifle)
-	{
-		OnAmmoChanged.Broadcast(this, RifleAmmo, RifleAmmo - OldAmmo);
-	}	
-}
-
-void AMNRCharacterBase::AddAmmo(int32 Delta, EAmmoType AmmoType)
-{
-	//Check if its negative to avoid adding negative amount
-	if (!ensure(Delta > 0.0f))
-	{
-		return;
-	}
-	switch (AmmoType)
-	{
-	case EAmmoType::E_Rifle:
-		RifleAmmo += Delta;
-		bIsRifle = true;
-		OnAmmoChanged.Broadcast(this, RifleAmmo, Delta);
-		break;
-	default:
-		break;
-	}
-}
-
-bool AMNRCharacterBase::RemoveAmmo(int32 Delta, EWeaponType WeaponType)
-{
-	//Check if its negative to avoid negative subtracting 
-	if (!ensure(Delta > 0.0f))
-	{
-		return false;
-	}
-
-	if (RifleAmmo < Delta)
-	{
-		return false;
-	}
-
-	switch (WeaponType)
-	{
-	case EWeaponType::E_Rifle:
-		RifleAmmo -= Delta;
-		bIsRifle = true;
-		OnAmmoChanged.Broadcast(this, RifleAmmo, Delta);
-		break;
-	default:
-		break;
-	}
-
-	return true;
-}
-
-
-void AMNRCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(AMNRCharacterBase, AmmoAmount);
-}
+*/
